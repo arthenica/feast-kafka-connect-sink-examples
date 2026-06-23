@@ -1,0 +1,38 @@
+{
+  "name": "feast-taxi-sink",
+  "config": {
+    "connector.class": "com.arthenica.kafka.feastconnect.sink.connector.FeastSinkConnector",
+    "tasks.max": "1",
+    "topics": "taxi-trips",
+
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+
+    "transforms": "addSourceId",
+    "transforms.addSourceId.type": "com.arthenica.kafka.connect.smt.KafkaSourceId$Value",
+    "transforms.addSourceId.field.name": "kafka_source_id",
+
+    "feast.url": "http://feast:6566",
+    "feast.push.source.name": "taxi_trips_with_source_id_push_source",
+    "feast.push.mode": "online_and_offline",
+    "topic.to.push.source.mapping": "taxi-trips:taxi_trips_with_source_id_push_source",
+
+    "auth.type": "none",
+
+    "event.timestamp.field": "event_timestamp",
+    "entity.key.fields": "trip_id",
+
+    "request.timeout.ms": "30000",
+    "batch.size": "500",
+    "linger.ms": "1000",
+    "max.retries": "5",
+    "retry.backoff.ms": "1000",
+
+    "dlq.context.headers.enable": "true",
+    "errors.tolerance": "all",
+    "errors.deadletterqueue.topic.name": "taxi-trips-dlq",
+    "errors.deadletterqueue.topic.replication.factor": "1",
+    "errors.deadletterqueue.context.headers.enable": "true"
+  }
+}

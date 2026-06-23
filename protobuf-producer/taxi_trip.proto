@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package com.arthenica.feast.demo;
+
+// Single top-level message: the Confluent Protobuf serializer frames it with the [0] message-index
+// optimization (a single 0 byte), which the connector's ProtobufRecordDecoder handles.
+// event_timestamp is an ISO-8601 string so it flows straight through the connector's timestamp
+// validation.
+message TaxiTrip {
+  string trip_id = 1;
+  string event_timestamp = 2;
+  int64 pickup_location_id = 3;
+  int64 dropoff_location_id = 4;
+  int64 passenger_count = 5;
+  double trip_distance = 6;
+  double fare_amount = 7;
+  double tip_amount = 8;
+}

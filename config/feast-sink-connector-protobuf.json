@@ -1,0 +1,35 @@
+{
+  "name": "feast-taxi-sink-protobuf",
+  "config": {
+    "connector.class": "com.arthenica.kafka.feastconnect.sink.connector.FeastSinkConnector",
+    "tasks.max": "1",
+    "topics": "taxi-trips-protobuf",
+
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.converters.ByteArrayConverter",
+
+    "schema.registry.url": "http://schema-registry:8081",
+
+    "feast.url": "http://feast:6566",
+    "feast.push.source.name": "taxi_trips_push_source",
+    "feast.push.mode": "online_and_offline",
+    "topic.to.push.source.mapping": "taxi-trips-protobuf:taxi_trips_push_source",
+
+    "auth.type": "none",
+
+    "event.timestamp.field": "event_timestamp",
+    "entity.key.fields": "trip_id",
+
+    "request.timeout.ms": "30000",
+    "batch.size": "500",
+    "linger.ms": "1000",
+    "max.retries": "5",
+    "retry.backoff.ms": "1000",
+
+    "dlq.context.headers.enable": "true",
+    "errors.tolerance": "all",
+    "errors.deadletterqueue.topic.name": "taxi-trips-protobuf-dlq",
+    "errors.deadletterqueue.topic.replication.factor": "1",
+    "errors.deadletterqueue.context.headers.enable": "true"
+  }
+}

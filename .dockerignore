@@ -1,0 +1,4 @@
+# The connect image only needs the unzipped plugin. Keep its build context small.
+*
+!plugin
+!plugin/**

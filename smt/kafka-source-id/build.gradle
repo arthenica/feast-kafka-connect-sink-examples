@@ -1,0 +1,25 @@
+plugins {
+    id "java-library"
+}
+
+group = "com.arthenica.kafka.connect.smt"
+version = "0.1.0"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+dependencies {
+    compileOnly "org.apache.kafka:connect-api:4.3.0"
+    compileOnly "org.apache.kafka:connect-transforms:4.3.0"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+}
+
+tasks.named("jar") {
+    archiveBaseName = "kafka-source-id-smt"
+    archiveVersion = ""
+}

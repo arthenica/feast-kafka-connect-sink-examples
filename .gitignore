@@ -1,0 +1,18 @@
+# The connector plugin is unzipped here at demo time; don't commit the jars.
+plugin/*
+!plugin/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+
+# Local SMT build output
+.gradle/
+smt/**/.gradle/
+smt/**/build/
+
+# IDE
+.idea
+
+# OS
+.DS_Store
