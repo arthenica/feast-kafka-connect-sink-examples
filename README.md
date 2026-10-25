@@ -181,6 +181,55 @@ docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 --topic taxi-trips-dlq --from-beginning --property print.headers=true
 ```
 
+## Automated end-to-end tests
+
+Build a connector ZIP in the connector repository with `./gradlew connectPluginZip`, then pass
+that ZIP to any test. Run all four scenarios with one command:
+
+```bash
+./scripts/test-all.sh /path/to/feast-kafka-connect-sink-0.1.0.zip
+```
+
+Each scenario is also independently runnable:
+
+```bash
+./scripts/test-json.sh /path/to/feast-kafka-connect-sink-0.1.0.zip
+./scripts/test-avro.sh /path/to/feast-kafka-connect-sink-0.1.0.zip
+./scripts/test-protobuf.sh /path/to/feast-kafka-connect-sink-0.1.0.zip
+./scripts/test-dlq-commit.sh /path/to/feast-kafka-connect-sink-0.1.0.zip
+```
+
+| Script | Assertions |
+|---|---|
+| `test-json.sh` | The actual JSON replay producer and source-ID SMT deliver three known rows to real Feast; values, event timestamps, exact Kafka source IDs, committed offsets, an empty DLQ, and offline Parquet rows are checked. |
+| `test-avro.sh` | The actual Avro producer registers its schema and delivers the same known rows through Schema Registry decoding; online/offline values, logical timestamps, committed offsets, and an empty DLQ are checked. |
+| `test-protobuf.sh` | The actual Protobuf producer and generated message class register the schema and deliver the known rows through the connector; online/offline values, timestamps, committed offsets, and an empty DLQ are checked. |
+| `test-dlq-commit.sh` | A real Connect worker cannot commit the input offset while the rejected record's DLQ Produce request is held; delivery and the subsequent commit are checked after release. |
+
+The three feature tests generate a tiny local Parquet fixture, including a null passenger count
+and zero-valued features. They reuse the demo producers, connector configs, SMT source, and Feast
+image definition. They do not download the TLC dataset. Only the test flush interval/batching and
+retry settings are adjusted; the configured `online_and_offline` push mode is preserved.
+
+Every individual script prints `[PASS]` or `[FAIL]` and returns zero only on success. The main
+runner continues through all four scenarios even if one fails, prints a per-scenario summary,
+and exits nonzero if any test fails. Missing prerequisites and startup failures count as failures;
+these commands do not silently skip tests. The main runner covers these four E2E scenarios;
+connector unit and integration tests remain `./gradlew test` and `./gradlew integrationTest` in
+the connector repository.
+
+Detailed container, assertion, offline-check, and cleanup logs are retained under the ignored
+`test-results/` directory. A full run also writes `summary.txt`. Set `E2E_LOG_DIR` to choose a
+different results directory, for example a CI artifacts directory. The tests have bounded readiness
+and assertion waits; failures include the path to the complete logs.
+
+Docker Compose and `unzip` are required. The first run downloads/builds the pinned demo runtime
+images, Python dependencies, and a JDK build image. All compilation happens in containers, so a
+host JDK or Python installation is unnecessary. Each scenario uses its own fresh Compose project,
+network, and data volume, publishes no host ports, and cleans up its containers, project images,
+and volumes on exit. The supplied plugin ZIP is copied into a temporary Docker build context;
+no host bind mounts or running demo stack are needed.
+
 ## DLQ commit regression test
 
 Run the automated durability test against a specific connector ZIP:
@@ -192,7 +241,7 @@ Run the automated durability test against a specific connector ZIP:
 This needs Docker Compose and `unzip`. The first run downloads the Kafka runtime and a JDK build
 image; no host JDK, taxi dataset, SMT, or running demo stack is required. Each run creates an
 isolated Compose project, publishes no host ports, and cleans up its containers, images, and
-volumes on exit. The ZIP is extracted into a temporary build context, so the test also works with
+volumes on exit. Logs are retained under `test-results/`. The ZIP is extracted into a temporary build context, so the test also works with
 remote Docker daemons without host bind mounts.
 
 The test uses a real Kafka broker, Connect worker, and DLQ topic. A small HTTP stub returns 400

@@ -6,6 +6,9 @@ plugin/*
 __pycache__/
 *.pyc
 
+# Automated E2E logs and suite summaries.
+test-results/
+
 # Local SMT build output
 .gradle/
 smt/**/.gradle/
