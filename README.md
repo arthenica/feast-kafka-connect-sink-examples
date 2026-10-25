@@ -181,6 +181,33 @@ docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 --topic taxi-trips-dlq --from-beginning --property print.headers=true
 ```
 
+## DLQ commit regression test
+
+Run the automated durability test against a specific connector ZIP:
+
+```bash
+./scripts/test-dlq-commit.sh /path/to/feast-kafka-connect-sink-0.1.0.zip
+```
+
+This needs Docker Compose and `unzip`. The first run downloads the Kafka runtime and a JDK build
+image; no host JDK, taxi dataset, SMT, or running demo stack is required. Each run creates an
+isolated Compose project, publishes no host ports, and cleans up its containers, images, and
+volumes on exit. The ZIP is extracted into a temporary build context, so the test also works with
+remote Docker daemons without host bind mounts.
+
+The test uses a real Kafka broker, Connect worker, and DLQ topic. A small HTTP stub returns 400
+for `/push`. A single valid event stays buffered until `preCommit` because the batch size is 500
+and linger is one day. The DLQ producer uses a separate Kafka listener through a test proxy that
+allows metadata traffic but holds Produce requests before they reach the broker. Offset commits
+continue using the direct listener.
+
+The test asserts that the input offset stays uncommitted and the DLQ stays empty for six seconds
+while the Produce request is held. It then releases the request and checks the original record
+and Connect context headers in the DLQ, followed by committed source offset 1. It exits nonzero
+if offsets advance early, the task fails, or delivery/commit never completes. With the unfixed
+connector it fails with `Input offset advanced ... before the rejected record was written to the
+DLQ`; the fixed connector passes.
+
 ## Tear down
 
 ```bash
